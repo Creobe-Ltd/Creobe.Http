@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace Creobe.Http;
@@ -65,6 +66,23 @@ public class HttpRequestClientBuilder<TResult>
         var json = JsonSerializer.Serialize(content, _jsonOptions);
         _content = new StringContent(json, Encoding.UTF8, "application/json");
 
+        _isContentSet = true;
+        return this;
+    }
+
+    public HttpRequestClientBuilder<TResult> WithFile(IBrowserFile file)
+    {
+        if (_isContentSet)
+            throw new InvalidOperationException("Content can only be set once.");
+
+        var content = new MultipartFormDataContent();
+
+        var fileContent = new StreamContent(file.OpenReadStream(file.Size));
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+
+        content.Add(fileContent, "\"file\"", file.Name);
+
+        _content = content;
         _isContentSet = true;
         return this;
     }
